@@ -9,6 +9,8 @@ pygame.font.init()
 
 WIN_WIDTH = 500
 WIN_HEIGHT = 800
+FLOOR_Y = 730
+
 
 BIRD_IMGS = [
     pygame.transform.scale2x(pygame.image.load(os.path.join("imgs", f"bird{i+1}.png")))
@@ -175,9 +177,19 @@ def draw_window(win, bird, pipes, base, score):
     pygame.display.update()
 
 
-def main():
-    FLOOR_Y = 730
-    bird = Bird(230, 350)
+def eval_genome(genomes, config):
+    # TODO make list with tuple of the 3 vals instaed of 3 lists
+    nets = []
+    ge = []
+    birds = []
+
+    for g in genomes:
+        net = neat.nn.FeedForwardNetwork(g, config)
+        nets.append(net)
+        birds.append(Bird(230, 350))
+        g.fitnes = 0
+        ge.append(g)
+
     base = Base(FLOOR_Y)
     pipes = [Pipe()]
     win = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
@@ -197,27 +209,38 @@ def main():
         add_pipe = False
         rem = []
         for pipe in pipes:
-            if pipe.collide(bird):
-                # TODO fill with collision lose event
-                pass
+            for i, bird in enumerate(birds):
+                if pipe.collide(bird):
+                    ge[i].fitness -= 1
+                    # FIXME removing while iterating
+                    birds.pop(i)
+                    nets.pop(i)
+                    ge.pop(i)
+                if not pipe.passed and pipe.x < bird.x:
+                    pipe.passed = True
+                    add_pipe = True
+                    # TODO change fitness increment in add pip if to this
+                    # ge[i].fitness += 5
+
             if pipe.x + pipe.PIPE_TOP.get_width() < 0:
                 rem.append(pipe)
-
-            if not pipe.passed and pipe.x < bird.x:
-                pipe.passed = True
-                add_pipe = True
             pipe.move()
 
         if add_pipe:
             score += 1
+            for g in ge:
+                g.fitness += 5
             pipes.append(Pipe())
 
         for r in rem:
             pipes.remove(r)
 
-        if bird.y + bird.img.get_height() >= FLOOR_Y:
-            # TODO fill with collision lose event
-            pass
+        for i, bird in enumerate(birds):
+            if bird.y + bird.img.get_height() >= FLOOR_Y:
+                # FIXME removing while iterating
+                birds.pop(i)
+                nets.pop(i)
+                ge.pop(i)
 
         base.move()
         draw_window(win, bird, pipes, base, score)
@@ -226,4 +249,25 @@ def main():
     quit()
 
 
-main()
+def run(config_path):
+    config = neat.config.Config(
+        neat.DefaultGenome,
+        neat.DefaultReproduction,
+        neat.DefaultSpeciesSet,
+        neat.DefaultStagnation,
+        config_path,
+    )
+
+    p = neat.Population(config)
+
+    p.add_reporter(neat.StdOutReporter(True))
+    stats = neat.StatisticsReporter()
+    p.add_reporter(stats)
+
+    winner = p.run(eval_genome, 50)
+
+
+if __name__ == "__main__":
+    local_dir = os.path.dirname(__file__)
+    config_path = os.path.join(local_dir, "config-feedforward.txt")
+    run(config_path)
