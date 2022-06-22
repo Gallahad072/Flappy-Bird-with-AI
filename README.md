@@ -1,4 +1,4 @@
-# NEAT Flappy Bird
+# Flappy Bird with AI
 
 Artificially Intelligent Flappy Bird Master
 
