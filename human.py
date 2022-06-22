@@ -173,66 +173,54 @@ def game():
     win = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
     clock = pygame.time.Clock()
     high_score = 0
+    playing = False
+
+    score = 0
+    bird = Bird()
+    pipes = [Pipe()]
 
     while True:
-        score = 0
-        bird = Bird()
-        pipes = [Pipe()]
+        clock.tick(30)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                bird.jump()
+                playing = True
 
-        lobby = True
-        while lobby:
-            clock.tick(30)
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    alive = False
-                    pygame.quit()
-                    quit()
-                if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-                    bird.jump()
-                    lobby = False
-                    break
-            base.move()
-            draw_window(win, bird, pipes, base, score, high_score)
-
-        alive = True
-        while alive:
-            clock.tick(30)
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    alive = False
-                    pygame.quit()
-                    quit()
-                if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-                    bird.jump()
-
+        if playing:
             bird.move()
 
             add_pipe = False
             for pipe in pipes:
                 if pipe.collide(bird):
-                    alive = False
-                    break
+                    playing = False
                 if not pipe.passed and pipe.x < BIRD_X:
                     pipe.passed = True
                     add_pipe = True
                 pipe.move()
 
-            if pipes[0].x + pipes[0].PIPE_TOP.get_width() < 0:
-                del pipes[0]
-
             if add_pipe:
                 score += 1
                 pipes.append(Pipe())
 
-            if bird.y + bird.img.get_height() >= FLOOR_Y or bird.y < 50:
-                alive = False
-                break
+            if pipes[0].x + pipes[0].PIPE_TOP.get_width() < 0:
+                del pipes[0]
 
-            base.move()
-            draw_window(win, bird, pipes, base, score, high_score)
+            if bird.y + bird.img.get_height() >= FLOOR_Y or bird.y < 50:
+                playing = False
+
+            if not playing:
+                score = 0
+                bird = Bird()
+                pipes = [Pipe()]
 
         if score > high_score:
             high_score = score
+
+        base.move()
+        draw_window(win, bird, pipes, base, score, high_score)
 
 
 if __name__ == "__main__":
