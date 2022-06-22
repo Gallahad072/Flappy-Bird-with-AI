@@ -214,8 +214,8 @@ def game():
                 bird = Bird()
                 pipes = [Pipe()]
 
-        if score > high_score:
-            high_score = score
+            if score > high_score:
+                high_score = score
 
         base.move()
         draw_window(win, bird, pipes, base, score, high_score)
