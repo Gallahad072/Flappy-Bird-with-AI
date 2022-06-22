@@ -206,17 +206,12 @@ def draw_window(win, birds, pipes, base, score, gen, pipe_ind):
 
 def eval_genomes(genomes, config):
     global gen
-    # TODO make list with tuple of the 3 vals instaed of 3 lists
-    nets = []
-    ge = []
-    birds = []
+    brds_gnms_nts = []
 
     for _, g in genomes:
         net = neat.nn.FeedForwardNetwork.create(g, config)
-        nets.append(net)
-        birds.append(Bird())
         g.fitness = 0
-        ge.append(g)
+        brds_gnms_nts.append((Bird(), g, net))
 
     base = Base(FLOOR_Y)
     pipes = [Pipe()]
@@ -234,7 +229,7 @@ def eval_genomes(genomes, config):
                 quit()
 
         pipe_ind = 0
-        if len(birds) > 0:
+        if len(brds_gnms_nts) > 0:
             if len(pipes) > 1 and BIRD_X > pipes[0].x + pipes[0].PIPE_TOP.get_width():
                 pipe_ind = 1
         else:
@@ -242,55 +237,44 @@ def eval_genomes(genomes, config):
             gen += 1
             break
 
-        for i, bird in enumerate(birds):
-            bird.move()
-            ge[i].fitness += 0.1
-
-            output = nets[i].activate(
+        for b, g, n in brds_gnms_nts:
+            b.move()
+            g.fitness += 0.1
+            output = n.activate(
                 (
-                    bird.y,
-                    abs(bird.y - pipes[pipe_ind].height),
-                    abs(bird.y - pipes[pipe_ind].bottom),
+                    b.y,
+                    abs(b.y - pipes[pipe_ind].height),
+                    abs(b.y - pipes[pipe_ind].bottom),
                 )
             )
             if output[0] >= 0.5:
-                bird.jump()
+                b.jump()
 
         add_pipe = False
-        rem = False
         for pipe in pipes:
-            for i, bird in enumerate(birds):
-                if pipe.collide(bird):
-                    ge[i].fitness -= 1
-                    # FIXME removing while iterating
-                    birds.pop(i)
-                    nets.pop(i)
-                    ge.pop(i)
-
+            brds_gnms_nts = [
+                (b, g, n) for b, g, n in brds_gnms_nts if not pipe.collide(b)
+            ]
             if not pipe.passed and pipe.x < BIRD_X:
                 pipe.passed = True
                 add_pipe = True
-
-            if pipe.x + pipe.PIPE_TOP.get_width() < 0:
-                rem = True
-
             pipe.move()
 
-        if rem:
+        if pipes[0].x + pipes[0].PIPE_TOP.get_width() < 0:
             del pipes[0]
 
         if add_pipe:
             score += 1
-            for g in ge:
+            for _, g, _ in brds_gnms_nts:
                 g.fitness += 5
             pipes.append(Pipe())
 
-        for i, bird in enumerate(birds):
-            if bird.y + bird.img.get_height() >= FLOOR_Y or bird.y < 0:
-                # FIXME removing while iterating
-                birds.pop(i)
-                nets.pop(i)
-                ge.pop(i)
+        brds_gnms_nts = [
+            (b, g, n)
+            for b, g, n in brds_gnms_nts
+            if b.y + b.img.get_height() < FLOOR_Y and b.y > 0
+        ]
+        birds = [b for b, _, _ in brds_gnms_nts]
 
         if score >= 50:
             break
