@@ -1,7 +1,5 @@
-from ast import While
 import os
 import random
-from re import T
 
 import pygame
 
