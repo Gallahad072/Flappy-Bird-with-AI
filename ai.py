@@ -157,9 +157,9 @@ class Base:
 
 def draw_window(win, birds, pipes, base, score, gen, pipe_ind):
     win.blit(BG_IMG, (0, 0))
-    base.draw(win)
     for pipe in pipes:
         pipe.draw(win)
+    base.draw(win)
     for bird in birds:
         if DRAW_LINES:
             try:
