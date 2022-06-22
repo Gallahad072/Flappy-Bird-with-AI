@@ -272,7 +272,7 @@ def eval_genomes(genomes, config):
         brds_gnms_nts = [
             (b, g, n)
             for b, g, n in brds_gnms_nts
-            if b.y + b.img.get_height() < FLOOR_Y and b.y > 0
+            if b.y + b.img.get_height() < FLOOR_Y and b.y > -50
         ]
         birds = [b for b, _, _ in brds_gnms_nts]
 

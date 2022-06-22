@@ -206,7 +206,7 @@ def game():
             if pipes[0].x + pipes[0].PIPE_TOP.get_width() < 0:
                 del pipes[0]
 
-            if bird.y + bird.img.get_height() >= FLOOR_Y or bird.y < 50:
+            if bird.y + bird.img.get_height() >= FLOOR_Y or bird.y < -50:
                 playing = False
 
             if not playing:
